@@ -1,0 +1,188 @@
+import pandas as pd
+import util
+
+
+MODEL_N1 = 1.0
+MODEL_N2 = 0.0
+
+
+# 提取数据(处理新人券和现金券)
+# data : 原始数据集
+# train_data_list : 提取特征之后的数据集
+def dt_extract_data(data, train_data_list, flag):
+    baijiaxing_txt = pd.read_csv("data/baijiaxing.txt", sep=",", encoding="GBK")
+    baijiaxing = baijiaxing_txt.columns.values
+    for i in range(len(data)):
+        # 当前地址前缀
+        curr_address_prefix = data.loc[i, "address_prefix"]
+        # 当前地址详情
+        curr_address_detail = data.loc[i, "address_detail"]
+        # 优惠券类型 （新人券、现金券）
+        curr_coupon_type = data.loc[i, "model_coupon_type"]
+        # 和当前地址前缀有相同前缀和相同优惠券类型的所有数据
+        curr_tmp_data = data[(data["address_prefix"] == curr_address_prefix) & (data["model_coupon_type"] == curr_coupon_type)]
+        # ----------------------提取(前缀 + 详细地址）相似度----------------------
+        same_address_prefix_list = list(curr_tmp_data["address_prefix"] + curr_tmp_data["address_detail"])
+        train_data_list.loc[i, "doc_simil"] = util.get_doc_simil_one(same_address_prefix_list, curr_address_prefix + curr_address_detail)
+        # ----------------------提取实付运费比例----------------------
+        total_freight_fee = data.loc[i, "total_freight_fee"]
+        discount_freight_fee = data.loc[i, "discount_freight_fee"]
+        if total_freight_fee == 0 or (total_freight_fee - discount_freight_fee) < 0:
+            train_data_list.loc[i, "real_freight_fee"] = 0
+        else:
+            train_data_list.loc[i, "real_freight_fee"] = (total_freight_fee - discount_freight_fee) / total_freight_fee
+        # ----------------判断姓是否在百家姓内 / 判断名字的长度是否是2到3个字 / 判断姓和名是否相同----------------
+        name = data.loc[i, "name"]
+        if name[0] in baijiaxing:
+            train_data_list.loc[i, "xingconfidence"] = 1
+        else:
+            train_data_list.loc[i, "xingconfidence"] = 0
+        if len(name) == 2 or len(name) == 3:
+            train_data_list.loc[i, "nameconfidence"] = 1
+        else:
+            train_data_list.loc[i, "nameconfidence"] = 0
+        if len(name) > 1 and name[1] != name[0]:
+            train_data_list.loc[i, "xingmingxiangdeng"] = 1
+        else:
+            train_data_list.loc[i, "xingmingxiangdeng"] = 0
+        # -----------------------提取溢价率--------------------------
+        order_price = data.loc[i, "order_price"]
+        train_data_list.loc[i, "price_ratio"] = (order_price - 1999.0) / 1999.0
+        # ---------------------------提取相同地址前缀相同IP比例--------------------------
+        # 当前IP
+        ip_address = data.loc[i, "user_ip"]
+        # # 相同地址前缀下和当前IP相同的IP的数目
+        same_addressprefix_same_ip_num = list(curr_tmp_data["user_ip"].values).count(ip_address)
+        if same_addressprefix_same_ip_num < MODEL_N1:
+            train_data_list.loc[i, "sameaddressprefix_sameIP_ratio"] = 0.0
+        else:
+            train_data_list.loc[i, "sameaddressprefix_sameIP_ratio"] = float((same_addressprefix_same_ip_num - MODEL_N1) / (float(len(curr_tmp_data)) - MODEL_N2))
+        # ----------------------------提取详细地址中数字的相似度--------------------------
+        # 当前详细地址
+        address_detail = data.loc[i, "address_detail"]
+        address_detail = util.chineseNumToArab(address_detail)
+        # 相同地址前缀下的详细地址
+        same_address_prefix_detail = list(curr_tmp_data["address_detail"].values)
+        # 将句子中的中文数字转换为阿拉伯数字
+        same_address_prefix_detail = [util.chineseNumToArab(tmp) for tmp in same_address_prefix_detail]
+        # 提取出详细地址中的数字
+        same_address_prefix_detail_num = [x for x in ["".join(list(filter(lambda x: x.isdigit(), tmp))) for tmp in same_address_prefix_detail]]
+        same_address_prefix_detail_num = list(filter(None, same_address_prefix_detail_num))
+        address_detail_num = "".join(list(filter(lambda x: x.isdigit(), address_detail)))
+        train_data_list.loc[i, "sameaddressprefix_similardetail"] = util.get_doc_simil_one(same_address_prefix_detail_num, address_detail_num)
+        # -----------------------------提取详细地址中汉字的相似度--------------------------
+        # 提取出详细地址中的汉字
+        same_address_prefix_detail_word = [x for x in ["".join(list(filter(lambda x: x.isalpha(), tmp))) for tmp in same_address_prefix_detail]]
+        same_address_prefix_detail_word = list(filter(None, same_address_prefix_detail_word))
+        address_detail_word = "".join(list(filter(lambda x: x.isalpha(), address_detail)))
+        train_data_list.loc[i, "sameaddressprefix_detail_zhongwen"] = util.get_doc_simil_one(same_address_prefix_detail_word, address_detail_word)
+        # -----------------------------相同地址前缀下不同用户比例---------------------------
+        sameaddress_user_num = len(set(list(curr_tmp_data["webuser_id"].values)))
+        if float(sameaddress_user_num) < MODEL_N1:
+            sameaddressprefix_userratio = 0.0
+        else:
+            sameaddressprefix_userratio = (float(sameaddress_user_num) - MODEL_N1) / (float(len(curr_tmp_data)) - MODEL_N2)
+        train_data_list.loc[i, "sameaddressprefix_userratio"] = sameaddressprefix_userratio
+        # -----------------------------相同地址前缀下相同收货人姓名比例--------------------------------
+        # 相同地址前缀下的收货人姓名
+        same_address_prefix_name = list(curr_tmp_data["name"].values)
+        train_data_list.loc[i, "same_address_prefix_name"] = util.same_data_num(same_address_prefix_name, name)
+        # -----------------------------相同地址前缀下相同收货人手机号数量--------------------------------
+        phone = data.loc[i, "phone"]
+        # 相同地址前缀下的收货人手机号码
+        same_address_prefix_phone = list(curr_tmp_data["phone"].values)
+        train_data_list.loc[i, "same_address_prefix_phone"] = util.same_data_num(same_address_prefix_phone, phone)
+        # -----------------------------相同地址前缀下相同设备号数量--------------------------------
+        deviceid = data.loc[i, "deviceid"]
+        # 相同地址前缀下的设备号
+        same_address_prefix_deviceid = list(curr_tmp_data["deviceid"].values)
+        train_data_list.loc[i, "same_address_prefix_deviceid"] = util.same_data_num(same_address_prefix_deviceid, deviceid)
+        # -----------------------------------提取注册来源---------------------------------------
+        register_src = data.loc[i, "register_src"]
+        if register_src in (2, 3, 4, 9):
+            train_data_list.loc[i, "register"] = 1
+        else:
+            train_data_list.loc[i, "register"] = 0
+        # ---------------------------提取截断地址前缀后相同地址前缀下地址详情的相似度--------------------------
+        # 当前地址前缀(截断)
+        address_prefix_new = data.loc[i, "address_prefix_new"]
+        # 当前地址详情(截断)
+        address_detail_new = data.loc[i, "address_detail_new"]
+        # 和当前地址前缀(截断)有相同前缀和相同优惠券类型的所有数据
+        curr_tmp_data_new = data[(data["address_prefix_new"] == address_prefix_new) & (data["model_coupon_type"] == curr_coupon_type)]
+        # 相同地址前缀(截断)下的详细地址
+        same_address_prefix_new_detail = list(curr_tmp_data_new["address_detail_new"].values)
+        train_data_list.loc[i, "sameaddressprefix_new_samedetail"] = util.get_doc_simil_one(same_address_prefix_new_detail, address_detail_new)
+        # ---------------------------组合特征--------------------------
+        # sameaddressprefix_userratio+sameaddressprefix_new_samedetail
+        train_data_list.loc[i, "sameaddressprefix_userratio+sameaddressprefix_new_samedetail"] = train_data_list.loc[i, "sameaddressprefix_userratio"] + train_data_list.loc[i, "sameaddressprefix_new_samedetail"]
+        # sameaddressprefix_userratio+sameaddressprefix_similardetail
+        train_data_list.loc[i, "sameaddressprefix_userratio+sameaddressprefix_similardetail"] = train_data_list.loc[i, "sameaddressprefix_userratio"] + train_data_list.loc[i, "sameaddressprefix_similardetail"]
+        # sameaddressprefix_userratio+same_address_prefix_name
+        train_data_list.loc[i, "sameaddressprefix_userratio+same_address_prefix_name"] = train_data_list.loc[i, "sameaddressprefix_userratio"] + train_data_list.loc[i, "same_address_prefix_name"]
+
+        # sameaddressprefix_new_samedetail-sameaddressprefix_detail_zhongwen
+        train_data_list.loc[i, "sameaddressprefix_new_samedetail-sameaddressprefix_detail_zhongwen"] = train_data_list.loc[i, "sameaddressprefix_new_samedetail"] - train_data_list.loc[i, "sameaddressprefix_detail_zhongwen"]
+        # sameaddressprefix_userratio+doc_simil
+        train_data_list.loc[i, "sameaddressprefix_userratio+doc_simil"] = train_data_list.loc[i, "sameaddressprefix_userratio"] + train_data_list.loc[i, "doc_simil"]
+        # sameaddressprefix_userratio/price_ratio
+        if train_data_list.loc[i, "price_ratio"] != 0:
+            train_data_list.loc[i, "sameaddressprefix_userratio/price_ratio"] = train_data_list.loc[i, "sameaddressprefix_userratio"] / train_data_list.loc[i, "price_ratio"]
+        else:
+            train_data_list.loc[i, "sameaddressprefix_userratio/price_ratio"] = 0.0
+        # price_ratio+login_order_time
+        train_data_list.loc[i, "price_ratio+login_order_time"] = train_data_list.loc[i, "price_ratio"] + train_data_list.loc[i, "login_order_time"]
+        # sameaddressprefix_userratio+coupon_radio
+        train_data_list.loc[i, "sameaddressprefix_userratio+coupon_radio"] = train_data_list.loc[i, "sameaddressprefix_userratio"] + train_data_list.loc[i, "coupon_radio"]
+        # sameaddressprefix_userratio*same_address_prefix_name
+        train_data_list.loc[i, "sameaddressprefix_userratio*same_address_prefix_name"] = train_data_list.loc[i, "sameaddressprefix_userratio"] * train_data_list.loc[i, "same_address_prefix_name"]
+        # sameaddressprefix_new_samedetail/doc_simil
+        if train_data_list.loc[i, "doc_simil"] != 0:
+            train_data_list.loc[i, "sameaddressprefix_new_samedetail/doc_simil"] = train_data_list.loc[i, "sameaddressprefix_new_samedetail"] / train_data_list.loc[i, "doc_simil"]
+        else:
+            train_data_list.loc[i, "sameaddressprefix_new_samedetail/doc_simil"] = 0.0
+        # sameaddressprefix_new_samedetail-doc_simil
+        train_data_list.loc[i, "sameaddressprefix_new_samedetail-doc_simil"] = train_data_list.loc[i, "sameaddressprefix_new_samedetail"] - train_data_list.loc[i, "doc_simil"]
+        # sameaddressprefix_new_samedetail-sameaddressprefix_sameIP_ratio
+        train_data_list.loc[i, "sameaddressprefix_new_samedetail-sameaddressprefix_sameIP_ratio"] = train_data_list.loc[i, "sameaddressprefix_new_samedetail"] - train_data_list.loc[i, "sameaddressprefix_sameIP_ratio"]
+        # sameaddressprefix_userratio-login_order_time
+        train_data_list.loc[i, "sameaddressprefix_userratio-login_order_time"] = train_data_list.loc[i, "sameaddressprefix_userratio"] - train_data_list.loc[i, "login_order_time"]
+        # sameaddressprefix_userratio-sameaddressprefix_similardetail
+        train_data_list.loc[i, "sameaddressprefix_userratio-sameaddressprefix_similardetail"] = train_data_list.loc[i, "sameaddressprefix_userratio"] - train_data_list.loc[i, "sameaddressprefix_similardetail"]
+        # sameaddressprefix_similardetail+login_order_time
+        train_data_list.loc[i, "sameaddressprefix_similardetail+login_order_time"] = train_data_list.loc[i, "sameaddressprefix_similardetail"] + train_data_list.loc[i, "login_order_time"]
+        # sameaddressprefix_similardetail-doc_simil
+        train_data_list.loc[i, "sameaddressprefix_similardetail-doc_simil"] = train_data_list.loc[i, "sameaddressprefix_similardetail"] - train_data_list.loc[i, "doc_simil"]
+        # price_ratio+sameaddressprefix_detail_zhongwen
+        train_data_list.loc[i, "price_ratio+sameaddressprefix_detail_zhongwen"] = train_data_list.loc[i, "price_ratio"] + train_data_list.loc[i, "sameaddressprefix_detail_zhongwen"]
+        # price_ratio+coupon_radio
+        train_data_list.loc[i, "price_ratio+coupon_radio"] = train_data_list.loc[i, "price_ratio"] + train_data_list.loc[i, "coupon_radio"]
+        # sameaddressprefix_similardetail+same_address_prefix_name
+        train_data_list.loc[i, "sameaddressprefix_similardetail+same_address_prefix_name"] = train_data_list.loc[i, "sameaddressprefix_similardetail"] + train_data_list.loc[i, "same_address_prefix_name"]
+        # coupon_radio/sameaddressprefix_sameIP_ratio
+        if train_data_list.loc[i, "sameaddressprefix_sameIP_ratio"] != 0:
+            train_data_list.loc[i, "coupon_radio/sameaddressprefix_sameIP_ratio"] = train_data_list.loc[i, "coupon_radio"] / train_data_list.loc[i, "sameaddressprefix_sameIP_ratio"]
+        else:
+            train_data_list.loc[i, "coupon_radio/sameaddressprefix_sameIP_ratio"] = 0.0
+    return train_data_list
+
+
+
+if __name__ == "__main__":
+    data = pd.read_csv("data/0721-0731/data-0721-0731-new.csv", encoding="GBK")
+
+    train_data_list = pd.DataFrame()
+    train_data_list["rcs_flag"] = data["rcs_flag"]
+    train_data_list["my_flag"] = data["my_flag"]
+    # 优惠比例
+    train_data_list["coupon_radio"] = round(data["use_coupon"] / data["total_price"], 2)
+    # 促销比例
+    train_data_list["promotion_radio"] = round(data["promotion_price"] / data["total_price"], 2)
+    # 实际付款比例
+    train_data_list["realpay_radio"] = round((data["total_price"] - data["use_coupon"] - data["promotion_price"]) / data["total_price"], 2)
+    # 登陆到下单的时间
+    train_data_list["login_order_time"] = data["login_order_time"]
+
+    train_data_list = dt_extract_data(data, train_data_list)
+    train_data_list.to_csv("data/train_data_0721_0731_new1.csv", index=False)
+    print("over")
