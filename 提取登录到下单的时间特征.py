@@ -31,17 +31,17 @@ def m_test0():
 
 # 使用后一列的数据填充缺失值
 def m_test1():
-    df = pd.read_csv("data/login-time-12345.csv")
+    df = pd.read_csv("data/0824-0920/login-time-0824-0920.csv")
     # 使用后一列的数据填充此列缺失值
     df = df.fillna(method="bfill", axis=1)
-    df.to_csv("data/login-time-12345-tmp1.csv", index=False)
+    df.to_csv("data/0824-0920/login-time-0824-0920-tmp1.csv", index=False)
     print("over")
 
 
 # 提取新特征（注册/登录到下单的时间）
 def m_test2():
-    df_one = pd.read_csv("data/12345.csv", encoding="GBK")
-    df_two = pd.read_csv("data/login-time-12345-tmp1.csv")
+    df_one = pd.read_csv("data/0824-0920/data-0824-0920.csv")
+    df_two = pd.read_csv("data/0824-0920/login-time-0824-0920-tmp1.csv")
     return_time = []
     for i in range(len(df_one)):
         user_id = df_one.loc[i]["webuser_id"]
@@ -68,13 +68,13 @@ def m_test2():
     data_return["user_id"] = list(df_one["webuser_id"])
     data_return["login_order_time"] = return_time
     df = pd.DataFrame(data_return)
-    df.to_csv("data/login-time-12345-tmp2.csv", index=False)
+    df.to_csv("data/0824-0920/login-time-0824-0920-tmp2.csv", index=False)
     print("over")
 
 
 # 提取登录到下单时间为-1的数据，然后计算平均值，进行填充
 def m_test3():
-    df = pd.read_csv("data/login-time-12345-tmp2.csv")
+    df = pd.read_csv("data/0824-0920/login-time-0824-0920-tmp2.csv")
     temp_data = df[df["login_order_time"] == -1]
     print(len(temp_data))
 
@@ -88,11 +88,10 @@ def m_test3():
         ix = df[df["order_id"] == temp_order_id].index[0]
         df.loc[ix, "login_order_time"] = a22
 
-    df.to_csv("data/login-time-12345-tmp3.csv", index=False)
+    df.to_csv("data/0824-0920/login-time-0824-0920-tmp3.csv", index=False)
 
 
 
 
 if __name__ == "__main__":
     m_test3()
-

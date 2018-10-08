@@ -4,7 +4,6 @@ import pandas as pd
 import decimal
 import time
 import datetime
-import json
 
 # 重写round方法，精确计算四舍五入
 def round(v, k):
@@ -192,7 +191,7 @@ def get_7_day_to_now(list_data, create_time):
 # 数据中的地址前缀遇到数字或者括号，进行截断，截断部分合并到详细地址，生成新的数据文件
 def address_cut():
     tmp_arr = ["(", "（", "[", "【"]
-    data = pd.read_csv("data/online-data-0824-0916.csv", encoding="GBK")
+    data = pd.read_csv("data/0824-0920/data-0824-0920-over.csv", encoding="GBK")
     for i in range(len(data)):
         address_prefix = data.loc[i, "address_prefix"]
         address_detail = data.loc[i, "address_detail"]
@@ -210,46 +209,11 @@ def address_cut():
 
         data.loc[i, "address_prefix_new"] = address_prefix_new
         data.loc[i, "address_detail_new"] = address_detail_new
-    data.to_csv("data/online-data-0824-0916-new.csv", encoding="GBK", index=False)
+    data.to_csv("data/0824-0920/data-0824-0920-new.csv", encoding="GBK", index=False)
     print("over")
 
 
 
-def input_tag_test():
-    # input_tag_list = list(data["input_tag"])
-    label_list = ["coupon_radio", "promotion_radio", "realpay_radio", "login_order_time", "doc_simil", "real_freight_fee",
-                  "xingconfidence", "nameconfidence", "xingmingxiangdeng", "price_ratio", "sameaddressprefix_sameIP_ratio", "sameaddressprefix_similardetail",
-                  "sameaddressprefix_detail_zhongwen", "sameaddressprefix_userratio", "same_address_prefix_name", "same_address_prefix_phone",
-                  "same_address_prefix_deviceid", "register", "sameaddressprefix_new_samedetail", "sameaddressprefix_userratio+sameaddressprefix_new_samedetail",
-                  "sameaddressprefix_userratio+sameaddressprefix_similardetail", "sameaddressprefix_userratio+same_address_prefix_name",
-                  "sameaddressprefix_new_samedetail-sameaddressprefix_detail_zhongwen", "sameaddressprefix_userratio+doc_simil", "sameaddressprefix_userratio/price_ratio",
-                  "price_ratio+login_order_time", "sameaddressprefix_userratio+coupon_radio", "sameaddressprefix_userratio*same_address_prefix_name",
-                  "sameaddressprefix_new_samedetail/doc_simil", "sameaddressprefix_new_samedetail-doc_simil", "sameaddressprefix_new_samedetail-sameaddressprefix_sameIP_ratio",
-                  "sameaddressprefix_userratio-login_order_time", "sameaddressprefix_userratio-sameaddressprefix_similardetail", "sameaddressprefix_similardetail+login_order_time",
-                  "sameaddressprefix_similardetail-doc_simil", "price_ratio+sameaddressprefix_detail_zhongwen", "price_ratio+coupon_radio", "sameaddressprefix_similardetail+same_address_prefix_name",
-                  "coupon_radio/sameaddressprefix_sameIP_ratio"]
-    df = pd.DataFrame(columns=label_list)
-    # for i in range(len(input_tag_list)):
-    #     input_dict = json.loads(input_tag_list[i])
-    #     for label in label_list:
-    #         df.loc[i, label] = input_dict[label]
-    # df.to_csv("data/12345-aa.csv", index=False)
-
-    for i in range(10000):
-        df.loc[i] = label_list
-
-    for aa in range(10):
-        df.to_csv("data/test/abcde_"+str(aa)+".csv", index=False)
-
-
-
-
 if __name__ == "__main__":
-    # data = pd.read_csv("data/12345.csv", encoding="GBK")
-    # aa = data.loc[3, "address_prefix"]
-    # curr_tmp_data = data.loc[0:1]
-    # curr_tmp_data = curr_tmp_data[curr_tmp_data["address_prefix"] == aa]
-    # print(len(curr_tmp_data))
-
-    input_tag_test()
+    address_cut()
 
