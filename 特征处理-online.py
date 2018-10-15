@@ -189,13 +189,14 @@ def dt_extract_data(data, train_data_list):
 
 
 if __name__ == "__main__":
-    data = pd.read_csv("data/12345.csv", encoding="GBK")
+    data = pd.read_csv("data/0914-1011/12345.csv", encoding="GBK")
 
     train_data_list = pd.DataFrame()
     train_data_list["order_id"] = data["id"]
     train_data_list["rcs_flag"] = data["rcs_flag"]
     train_data_list["result"] = data["result"]
+    train_data_list["new_flag"] = data["new_flag"]
 
     train_data_list = dt_extract_data(data, train_data_list)
-    train_data_list.to_csv("data/train-12345-time.csv", index=False)
+    train_data_list.to_csv("data/0914-1011/train-12345-time.csv", index=False)
     print("over")

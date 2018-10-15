@@ -191,7 +191,7 @@ def get_7_day_to_now(list_data, create_time):
 # 数据中的地址前缀遇到数字或者括号，进行截断，截断部分合并到详细地址，生成新的数据文件
 def address_cut():
     tmp_arr = ["(", "（", "[", "【"]
-    data = pd.read_csv("data/0824-0920/data-0824-0920-over.csv", encoding="GBK")
+    data = pd.read_csv("data/0914-1011/online-data-0914-1011-over.csv", encoding="GBK")
     for i in range(len(data)):
         address_prefix = data.loc[i, "address_prefix"]
         address_detail = data.loc[i, "address_detail"]
@@ -209,7 +209,7 @@ def address_cut():
 
         data.loc[i, "address_prefix_new"] = address_prefix_new
         data.loc[i, "address_detail_new"] = address_detail_new
-    data.to_csv("data/0824-0920/data-0824-0920-new.csv", encoding="GBK", index=False)
+    data.to_csv("data/0914-1011/online-data-0914-1011-over-new.csv", encoding="GBK", index=False)
     print("over")
 
 
