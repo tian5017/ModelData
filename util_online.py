@@ -207,11 +207,6 @@ def address_cut():
 
 
 if __name__ == "__main__":
-    o_df = pd.read_csv("data/12345/abcde-new.csv", encoding="GBK")
-    n_df = pd.read_csv("data/12345/abcde-new1.csv", encoding="GBK")
-    n_df['id'] = n_df['id'].astype('category')
-    n_df['id'].cat.reorder_categories(o_df["id"].values, inplace=True)
-    n_df.sort_values('id', inplace=True)
-    n_df.to_csv("data/12345/abcde-new2.csv", encoding="GBK", index=False)
+    pass
 
 
