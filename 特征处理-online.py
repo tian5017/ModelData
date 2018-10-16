@@ -1,6 +1,8 @@
 import pandas as pd
 import util_online as util
 import decimal
+from timeit import Timer
+import time
 
 # 重写round方法，精确计算四舍五入
 def round(v, k):
@@ -18,6 +20,7 @@ def dt_extract_data(data, train_data_list):
     baijiaxing_txt = pd.read_csv("data/baijiaxing.txt", sep=",", encoding="GBK")
     baijiaxing = baijiaxing_txt.columns.values
     for i in range(len(data)):
+        print(i, end="\t")
         # ----------------------提取优惠比例----------------------
         train_data_list.loc[i, "coupon_radio"] = round(data.loc[i, "use_coupon"] / data.loc[i, "total_price"], 2)
         # ----------------------提取促销比例----------------------
@@ -187,16 +190,20 @@ def dt_extract_data(data, train_data_list):
 
 
 
-
-if __name__ == "__main__":
-    data = pd.read_csv("data/0914-1011/12345.csv", encoding="GBK")
+def main():
+    data = pd.read_csv("data/12345/abcde-sort.csv", encoding="GBK")
 
     train_data_list = pd.DataFrame()
     train_data_list["order_id"] = data["id"]
     train_data_list["rcs_flag"] = data["rcs_flag"]
-    train_data_list["result"] = data["result"]
-    train_data_list["new_flag"] = data["new_flag"]
+    # train_data_list["result"] = data["result"]
+    # train_data_list["new_flag"] = data["new_flag"]
 
     train_data_list = dt_extract_data(data, train_data_list)
-    train_data_list.to_csv("data/0914-1011/train-12345-time.csv", index=False)
+    train_data_list.to_csv("data/12345/train-abcde11.csv", index=False)
     print("over")
+
+
+if __name__ == "__main__":
+    exc_time = Timer("main()", "from __main__ import main").timeit(1)
+    print("run times:", exc_time)
