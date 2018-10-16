@@ -20,7 +20,7 @@ def dt_extract_data(data, train_data_list):
     baijiaxing_txt = pd.read_csv("data/baijiaxing.txt", sep=",", encoding="GBK")
     baijiaxing = baijiaxing_txt.columns.values
     for i in range(len(data)):
-        print(i, end="\t")
+        print(i)
         # ----------------------提取优惠比例----------------------
         train_data_list.loc[i, "coupon_radio"] = round(data.loc[i, "use_coupon"] / data.loc[i, "total_price"], 2)
         # ----------------------提取促销比例----------------------
@@ -191,7 +191,9 @@ def dt_extract_data(data, train_data_list):
 
 
 def main():
-    data = pd.read_csv("data/12345/abcde-sort.csv", encoding="GBK")
+    base_data = pd.read_csv("data/12345/abcde-new.csv", encoding="GBK")
+    # 按照时间顺序排序
+    data = base_data.sort_values(by=["created", "address_prefix"])
 
     train_data_list = pd.DataFrame()
     train_data_list["order_id"] = data["id"]
@@ -199,7 +201,14 @@ def main():
     # train_data_list["result"] = data["result"]
     # train_data_list["new_flag"] = data["new_flag"]
 
+    # 提取特征
     train_data_list = dt_extract_data(data, train_data_list)
+
+    # 特征提取完成后，在按照原来的输入顺序进行排序
+    base_order_id_list = list(base_data["id"])
+    train_data_list["order_id"] = train_data_list["order_id"].astype("category")
+    train_data_list["order_id"].cat.reorder_categories(base_order_id_list, inplace=True)
+    train_data_list.sort_values("order_id", inplace=True)
     train_data_list.to_csv("data/12345/train-abcde11.csv", index=False)
     print("over")
 

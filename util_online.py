@@ -61,7 +61,7 @@ def chinese2digits(num_chinese):
 
 # 将一个中文句子中的中文数字转换为阿拉伯数字
 def chineseNumToArab(in_str):
-    num_str_start_symbol = ['一', '①', '二', '②', '两', '三', '③', '四', '④', '五', '⑤', '六', '⑥', '七', '⑦', '八', '⑧', '九', '⑨', '十', '⑩', 'O', 'o', 'I', 'i']
+    num_str_start_symbol = ['一', '①', '二', '②', '两', '三', '③', '四', '④', '五', '⑤', '六', '⑥', '七', '⑦', '八', '⑧', '九', '⑨', '十', '⑩']
     in_l = len(in_str)
     out_str = ""
     if in_l == 0:
@@ -91,7 +91,16 @@ def chineseNumToArab(in_str):
         num_result = str(chinese2digits(num_str))
         out_str += str(num_result)
 
-    return out_str
+    tmp_extend_symbol = {'O': '0', 'o': '0', 'I': '1', 'i': '1'}
+    out_list = []
+    if len(out_str) > 0:
+        for out_char in out_str:
+            if out_char in tmp_extend_symbol.keys():
+                out_list.append(tmp_extend_symbol[out_char])
+            else:
+                out_list.append(out_char)
+
+    return "".join(out_list)
 
 
 
@@ -198,6 +207,11 @@ def address_cut():
 
 
 if __name__ == "__main__":
-    print(chineseNumToArab("五o4"))
+    o_df = pd.read_csv("data/12345/abcde-new.csv", encoding="GBK")
+    n_df = pd.read_csv("data/12345/abcde-new1.csv", encoding="GBK")
+    n_df['id'] = n_df['id'].astype('category')
+    n_df['id'].cat.reorder_categories(o_df["id"].values, inplace=True)
+    n_df.sort_values('id', inplace=True)
+    n_df.to_csv("data/12345/abcde-new2.csv", encoding="GBK", index=False)
 
 
