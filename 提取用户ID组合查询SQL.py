@@ -2,7 +2,7 @@ import pandas as pd
 
 # 提取所有的用户ID
 def m_test1():
-    data = pd.read_csv("data/12345.csv", encoding="GBK")
+    data = pd.read_csv("data/test/mj-data-12345.csv", encoding="GBK")
     webuser_id = data["webuser_id"]
     print(len(webuser_id))
 
@@ -17,7 +17,7 @@ def m_test1():
         if i % 1000 == 0:
             s += "\n"
 
-    with open("sql/aa.txt", "w") as f:
+    with open("sql/12345.txt", "w") as f:
         f.write(s)
 
 
@@ -45,4 +45,4 @@ def m_test2():
 
 
 if __name__ == "__main__":
-    m_test2()
+    m_test1()

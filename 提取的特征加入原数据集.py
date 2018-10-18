@@ -57,8 +57,8 @@ def m_test2():
 
 # 将新提取的用户行为特征加入原来数据集（登陆到下单时间特征）
 def m_test3():
-    df_one = pd.read_csv("data/12345/abcde.csv", encoding="GBK")
-    df_two = pd.read_csv("data/12345/login-time-abcde-over.csv")
+    df_one = pd.read_csv("data/test/mj-data-12345.csv", encoding="GBK")
+    df_two = pd.read_csv("data/test/login-time-mj-12345-over.csv")
     login_order_time = []
     for i in range(len(df_one)):
         order_id = df_one.loc[i, "id"]
@@ -67,7 +67,7 @@ def m_test3():
         login_order_time.append(two_data["login_order_time"].values[0])
 
     df_one["login_order_time"] = login_order_time
-    df_one.to_csv("data/12345/abcde-over.csv", index=False, encoding="GBK")
+    df_one.to_csv("data/test/mj-data-12345-over.csv", index=False, encoding="GBK")
     print("over")
 
 
