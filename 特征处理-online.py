@@ -191,7 +191,7 @@ def dt_extract_data(data, train_data_list):
 
 
 def main():
-    base_data = pd.read_csv("data/test/mj-data-12345-new.csv", encoding="GBK")
+    base_data = pd.read_csv("data/test/20181019-D1-over.csv", encoding="GBK")
     # 按照时间顺序排序
     data = base_data.sort_values(by=["created", "address_prefix"])
 
@@ -209,7 +209,7 @@ def main():
     train_data_list["order_id"] = train_data_list["order_id"].astype("category")
     train_data_list["order_id"].cat.reorder_categories(base_order_id_list, inplace=True)
     train_data_list.sort_values("order_id", inplace=True)
-    train_data_list.to_csv("data/test/train-mj-data-12345.csv", index=False)
+    train_data_list.to_csv("data/test/20181019-D1-train.csv", index=False)
     print("over")
 
 
